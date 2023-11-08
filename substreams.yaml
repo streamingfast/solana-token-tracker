@@ -1,0 +1,30 @@
+specVersion: v0.1.0
+package:
+  name: solana_token_tracker
+  version: v0.1.0
+  url: https://github.com/streamingfast/solana-token-tracker
+#  image: ./solana-token-tracker.png
+  doc: |
+    Solana Token Tracker.
+
+network: solana
+
+protobuf:
+  files:
+    - solana-token-tracker/v1/solana-token-tracker.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: target/wasm32-unknown-unknown/release/solana_token_tracker.wasm
+
+modules:
+  - name: map_solana_token_events
+    kind: map
+    initialBlock: 158558168
+    inputs:
+      - source: sf.solana.type.v1.Block
+    output:
+      type: proto:solana_token_tracker.types.v1.Output

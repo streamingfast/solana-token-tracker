@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package solana_token_tracker.types.v1;
+
+message Output {
+  repeated Transfer transfers = 60;
+  repeated Mint mints = 70;
+  repeated Burn burns = 80;
+  repeated InitializedAccount initialized_account = 120;
+}
+
+message Transfer {
+  string trx_hash = 1;
+  int64 timestamp = 2;
+  string from = 3;
+  string to = 4;
+  double amount = 5;
+}
+
+message Mint {
+  string trx_hash = 1;
+  int64 timestamp = 2;
+  string to = 4;
+  double amount = 5;
+}
+
+message Burn {
+  string trx_hash = 1;
+  int64 timestamp = 2;
+  string from = 3;
+  double amount = 5;
+}
+
+message InitializedAccount {
+  string trx_hash = 1;
+  string account = 2;
+  string mint = 3;
+  string owner = 4;
+}
