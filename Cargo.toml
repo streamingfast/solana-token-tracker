@@ -23,6 +23,8 @@ substreams-solana = { git = "https://github.com/streamingfast/substreams-solana"
 substreams-solana-program-instructions = "0.1"
 thiserror = "1.0.25"
 anyhow = "1.0.72"
+serde_qs = "0.12.0"
+serde = { version = "1.0", features = ["derive"] }
 
 
 [target.wasm32-unknown-unknown.dependencies]

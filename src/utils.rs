@@ -1,4 +1,4 @@
-use crate::constants;
+use crate::{constants, TokenParams};
 use crate::pb::solana_token_tracker::types::v1::{
     Burn, InitializedAccount, Mint, Output, Transfer,
 };
@@ -21,11 +21,12 @@ pub fn process_compiled_instruction(
     inst_index: u32,
     inst: &CompiledInstruction,
     accounts: &Vec<String>,
+    parameters: &TokenParams
 ) {
     let instruction_program_account = &accounts[inst.program_id_index as usize];
 
     if instruction_program_account == constants::TOKEN_PROGRAM {
-        match process_token_instruction(trx_hash, timestamp, &inst.data, &inst.accounts, meta, accounts, output) {
+        match process_token_instruction(trx_hash, timestamp, &inst.data, &inst.accounts, meta, accounts, output, parameters) {
             Err(err) => {
                 panic!(
                     "trx_hash {} top level transaction without inner instructions: {}",
@@ -37,7 +38,7 @@ pub fn process_compiled_instruction(
 
     }
 
-    process_inner_instructions(output, inst_index, meta, accounts, trx_hash, timestamp);
+    process_inner_instructions(output, inst_index, meta, accounts, trx_hash, timestamp, parameters);
 }
 
 
@@ -48,6 +49,7 @@ pub fn process_inner_instructions(
     accounts: &Vec<String>,
     trx_hash: &String,
     timestamp: i64,
+    parameters: &TokenParams,
 ) {
     meta.inner_instructions
         .iter()
@@ -68,6 +70,7 @@ pub fn process_inner_instructions(
                         meta,
                         accounts,
                         output,
+                        parameters
                     ) {
                         Err(err) => {
                             panic!("trx_hash {} filtering inner instructions: {}", trx_hash, err)
@@ -86,6 +89,7 @@ fn process_token_instruction(
     meta: &TransactionStatusMeta,
     accounts: &Vec<String>,
     output: &mut Output,
+    parameters: &TokenParams,
 ) -> Result<(),Error> {
     match TokenInstruction::unpack(&data) {
         Err(err) => {
@@ -95,7 +99,7 @@ fn process_token_instruction(
         Ok(instruction) => match instruction {
             TokenInstruction::Transfer { amount: amt }  => {
                 let authority = &accounts[inst_accounts[2] as usize];
-                if is_honey_token_transfer(&meta.pre_token_balances, &authority) {
+                if is_token_transfer(&meta.pre_token_balances, &authority, &parameters.token_contract) {
                     let source = &accounts[inst_accounts[0] as usize];
                     let destination = &accounts[inst_accounts[1] as usize];
                     output.transfers.push(Transfer {
@@ -103,7 +107,7 @@ fn process_token_instruction(
                         timestamp,
                         from: source.to_owned(),
                         to: destination.to_owned(),
-                        amount: amount_to_decimals(amt as f64, constants::HONEY_TOKEN_DECIMALS as f64),
+                        amount: amount_to_decimals(amt as f64, parameters.token_decimals as f64),
                     });
                     return Ok(());
                 }
@@ -111,7 +115,7 @@ fn process_token_instruction(
              TokenInstruction::TransferChecked { amount: amt, .. } => {
                 substreams::log::println("transfer");
                 let mint = &accounts[inst_accounts[1] as usize];
-                if is_honey_token(mint) {
+                if is_token(mint, &parameters.token_contract) {
                     let source = &accounts[inst_accounts[0] as usize];
                     let destination = &accounts[inst_accounts[2] as usize];
                     output.transfers.push(Transfer {
@@ -119,7 +123,7 @@ fn process_token_instruction(
                         timestamp,
                         from: source.to_owned(),
                         to: destination.to_owned(),
-                        amount: amount_to_decimals(amt as f64, constants::HONEY_TOKEN_DECIMALS as f64),
+                        amount: amount_to_decimals(amt as f64, parameters.token_decimals as f64),
                     });
                     return Ok(());
                 }
@@ -135,7 +139,7 @@ fn process_token_instruction(
                     trx_hash: trx_hash.to_owned(),
                     timestamp,
                     to: account_to,
-                    amount: amount_to_decimals(amt as f64, constants::HONEY_TOKEN_DECIMALS as f64),
+                    amount: amount_to_decimals(amt as f64, parameters.token_decimals as f64),
                 });
                 return Ok(());
             }
@@ -150,7 +154,7 @@ fn process_token_instruction(
                     trx_hash: trx_hash.to_owned(),
                     timestamp,
                     from: account_from,
-                    amount: amount_to_decimals(amt as f64, constants::HONEY_TOKEN_DECIMALS as f64),
+                    amount: amount_to_decimals(amt as f64, parameters.token_decimals as f64),
                 });
                 return Ok(());
             }
@@ -205,13 +209,13 @@ fn fetch_account_to(account_keys: &Vec<String>, position: u8) -> String {
     return account_keys[position as usize].to_owned();
 }
 
-fn is_honey_token(account: &String) -> bool{
-    return account.eq(constants::HONEY_CONTRACT_ADDRESS)
+fn is_token(account: &String, contract_address: &String) -> bool{
+    return account.eq(contract_address)
 }
 
-fn is_honey_token_transfer(pre_token_balances: &Vec<TokenBalance>, account: &String) -> bool {
+fn is_token_transfer(pre_token_balances: &Vec<TokenBalance>, account: &String, contract_address: &String) -> bool {
     for token_balance in pre_token_balances.iter() {
-        if token_balance.owner.eq(account) && token_balance.mint.eq(constants::HONEY_CONTRACT_ADDRESS) {
+        if token_balance.owner.eq(account) && token_balance.mint.eq(contract_address) {
             return true;
         }
     }
