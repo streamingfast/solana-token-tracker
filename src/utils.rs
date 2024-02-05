@@ -130,7 +130,7 @@ fn process_token_instruction(
             }
             TokenInstruction::MintTo { amount: amt } | TokenInstruction::MintToChecked { amount: amt, .. } => {
                 let mint = fetch_account_to(&accounts, inst_accounts[0]);
-                if mint.ne(&constants::HONEY_CONTRACT_ADDRESS) {
+                if mint.ne(&parameters.token_contract) {
                     return Ok(());
                 }
 
@@ -145,7 +145,7 @@ fn process_token_instruction(
             }
             TokenInstruction::Burn { amount: amt } | TokenInstruction::BurnChecked { amount: amt, .. } => {
                 let mint = fetch_account_to(&accounts, inst_accounts[1]);
-                if mint.ne(&constants::HONEY_CONTRACT_ADDRESS) {
+                if mint.ne(&parameters.token_contract) {
                     return Ok(());
                 }
 
@@ -160,7 +160,7 @@ fn process_token_instruction(
             }
             TokenInstruction::InitializeAccount {} => {
                 let mint = fetch_account_to(&accounts, inst_accounts[1]);
-                if mint.ne(&constants::HONEY_CONTRACT_ADDRESS) {
+                if mint.ne(&parameters.token_contract) {
                     return Ok(());
                 }
 
@@ -176,7 +176,7 @@ fn process_token_instruction(
             }
             TokenInstruction::InitializeAccount2 { owner: ow } | TokenInstruction::InitializeAccount3 { owner: ow } => {
                 let mint = fetch_account_to(&accounts, inst_accounts[1]);
-                if mint.ne(&constants::HONEY_CONTRACT_ADDRESS) {
+                if mint.ne(&parameters.token_contract) {
                     return Ok(());
                 }
 
