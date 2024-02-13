@@ -25,6 +25,10 @@ modules:
     kind: map
     initialBlock: 158558168
     inputs:
+      - params: string
       - source: sf.solana.type.v1.Block
     output:
       type: proto:solana_token_tracker.types.v1.Output
+
+params:
+  map_solana_token_events: "token_contract=Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB&token_decimals=6"
